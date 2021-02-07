@@ -1,35 +1,100 @@
-# Simple GMM-HMM model for isolated digit recognition
+# Simple GMM-HMM models for isolated digit recognition
+
 Python implementation of simple GMM and HMM models for isolated digit recognition.
 
 This implementation contains 3 models:
 
-1. Single Gaussian (`sg`): Each digit is modeled using a single Gaussian with diagonal covariance.
-2. Gaussian Mixture Model (`gmm`): Each digit is modeled using a mixture of `ncomp` Gaussians, initialized by perturbing the `sg` model.
-3. Hidden Markov Model (`hmm`): Each digit is modeled by an HMM consisting of `nstate` states, where the emission probability of each state is a single Gaussian with diagonal covariance.
+1. Single Gaussian: Each digit is modeled using a single Gaussian with diagonal 
+covariance.
+2. Gaussian Mixture Model (GMM): Each digit is modeled using a mixture of Gaussians, 
+initialized by perturbing the single Gaussian model.
+3. Hidden Markov Model (HMM): Each digit is modeled by an HMM consisting of N states, 
+where the emission probability of each state is a single Gaussian with diagonal covariance.
 
-### How to run
+**Disclaimer:** This is an educational implementation and is not expected to be high-performance.
 
+### Installation
+
+To install for usage:
+
+```shell
+pip install git+https://github.com/desh2608/gmm-hmm-asr.git
 ```
-python3 submission.py <opt-args> train test
+
+To install with tests (for development):
+
+```shell
+git clone https://github.com/desh2608/gmm-hmm-asr.git
+cd gmm-hmm-asr && pip install -e .
 ```
 
-* `train` is the training data
-* `test` is the test data
+### Running the tests
 
-The optional arguments are:
-* `--mode`: Type of model (`sg`, `gmm`, `hmm`). Default: `sg`
-* `--niter`: Number of iterations. Default = 10
-* `--ncomp`: Number of components in GMM model. Default = 8
-* `--nstate`: Number of states in HMM model. Default = 5
-* `--debug`: Uses only top 100 utterances for train and test
+```shell
+pytest
+```
 
-### Training data format
+This will run each of the 3 models end-to-end, and take approximately 2-3 minutes.
 
-I cannot upload the full training and test data (for copyright reasons), but a small sample of the training data can be found at this [Google Drive link](https://drive.google.com/file/d/1NhF7fuX54jau9iXxuitOfm9QRQPHNW2Q/view?usp=sharing). This should help in understanding the format of the data.
+### Usage
 
-### Help
+#### 1. Single Gaussian
 
-This code is based on a template provided by Shinji Watanabe (Johns Hopkins University), written for a course project.
+To train, first create `train_data` which should be a list of `DataTuple(key,feats,label)` objects. 
 
-For assistance, contact `draj@cs.jhu.edu`.
- 
+```python
+from gmm_hmm_asr.data import DataTuple
+from gmm_hmm_asr.trainers import SingleGaussTrainer
+
+ndim = 40 # dimensionality of features
+DIGITS = ['1','2','3','4','5'] # digits to be recognized
+
+sg_model = SingleGaussTrainer(ndim, DIGITS)
+sg_model.train(train_data)
+```
+
+For prediction, again create a `test_data` list similar to `train_data`.
+
+```python
+preds = sg_model.predict(test_data)
+y_pred = [pred[0] for pred in preds]  # predicted labels
+y_ll = [pred[1] for pred in preds]  # maximum log-likelihood
+```
+
+#### 2. Gaussian Mixture Model
+
+```python
+from gmm_hmm_asr.data import DataTuple
+from gmm_hmm_asr.trainers import GMMTrainer
+
+ndim = 40 # dimensionality of features
+ncomp = 8 # number of Gaussian components
+niter = 10 # number of training iterations
+DIGITS = ['1','2','3','4','5'] # digits to be recognized
+
+gmm_model = GMMTrainer(ndim, ncomp, DIGITS)
+gmm_model.train(train_data, niter)
+
+preds = gmm_model.predict(test_data)
+```
+
+#### 3. Hidden Markov Model
+
+```python
+from gmm_hmm_asr.data import DataTuple
+from gmm_hmm_asr.trainers import HMMTrainer
+
+ndim = 40 # dimensionality of features
+nstate = 5 # number of HMM states
+niter = 10 # number of training iterations
+DIGITS = ['1','2','3','4','5'] # digits to be recognized
+
+hmm_model = GMMTrainer(ndim, nstate, DIGITS)
+hmm_model.train(train_data, niter)
+
+preds = hmm_model.predict(test_data)
+```
+
+### Issues
+
+If you find any bugs, please raise an Issue or contact `draj@cs.jhu.edu`.
